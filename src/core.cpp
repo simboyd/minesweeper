@@ -18,7 +18,7 @@ Core::Core(int x, int y, int bombFrequency): x(x), y(y), bombFrequency(bombFrequ
 		SDL_WINDOWPOS_UNDEFINED, windowWidth, windowHeight, 0);
 	renderer = SDL_CreateRenderer(window, -1, 0);
 
-	if(!window || !renderer)
+	if (!window || !renderer)
 	{
 		running = false;
 		return;
@@ -57,16 +57,24 @@ Core::~Core()
 	for (int i = 0; i < cell.size(); i++)
 	{
 		for (int j = 0; j < cell[i].size(); j++)
+		{
 			delete cell[i][j];
+			cell[i][j] = NULL;
+		}
 	}
 
 	for (int i = 0; i < 14; i++)
+	{
 		SDL_DestroyTexture(texture[i]);
-
+		texture[i] = NULL;
+	}
+	
 	TTF_CloseFont(font);
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
+	
+	font = renderer = window = NULL;
 }
 
 void Core::prepareTextures()
@@ -80,9 +88,9 @@ void Core::prepareTextures()
 		surface = TTF_RenderText_Blended(font, s.c_str(), color);
 		texture[i] = SDL_CreateTextureFromSurface(renderer, surface);
 
-		color.r += 40;
-		color.g += 1;
-		color.b += 1;
+		color.r += 28;	// more bombs around, more red. max bombs around = 8
+		color.g += 1;	// color.r maxvalue = 28*9=252. we start at white,
+		color.b += 1;	// i.e. invisible zero
 		SDL_FreeSurface(surface);
 		surface = NULL;
 	}
@@ -159,8 +167,8 @@ void Core::layMines() // literally lays mines, and counts mines around a cell
 	{
 		for (int j = 1; j <= y; j++)
 		{
+			
 			int randomNumber = rand() % bombFrequency;
-
 			if (randomNumber == 0)
 				cell[i][j]->bomb = true;
 
@@ -174,31 +182,31 @@ void Core::layMines() // literally lays mines, and counts mines around a cell
 		for (int j = 1; j <= y; j++)
 		{
 
-			if (cell[i-1][j-1]->bomb) // northwest
+			if (cell[i-1][j-1]->bomb)		// northwest
 				cell[i][j]->amountOfBombs++;
 
-			if (cell[i - 1][j]->bomb) // north
+			if (cell[i - 1][j]->bomb)		// north
 				cell[i][j]->amountOfBombs++;
 
-			if (cell[i - 1][j+1]->bomb) // northeast
+			if (cell[i - 1][j+1]->bomb)		// northeast
 				cell[i][j]->amountOfBombs++;
 
-			if (cell[i][j-1]->bomb) // west
+			if (cell[i][j-1]->bomb)			// west
 				cell[i][j]->amountOfBombs++;
 
-			if (cell[i][j]->bomb)				// including the self, because of the 
+			if (cell[i][j]->bomb)			// including the self, because of the 
 				cell[i][j]->amountOfBombs++;	// recursion stop condition for bombs
 
-			if (cell[i][j+1]->bomb) // east
+			if (cell[i][j+1]->bomb)			// east
 				cell[i][j]->amountOfBombs++;
 
-			if (cell[i+1][j-1]->bomb) // southwest
+			if (cell[i+1][j-1]->bomb)		// southwest
 				cell[i][j]->amountOfBombs++;
 
-			if (cell[i+1][j]->bomb) // south
+			if (cell[i+1][j]->bomb)			// south
 				cell[i][j]->amountOfBombs++;
 
-			if (cell[i+1][j+1]->bomb) // southeast
+			if (cell[i+1][j+1]->bomb)		// southeast
 				cell[i][j]->amountOfBombs++;
 
 		}
@@ -240,13 +248,9 @@ void Core::listen() // handle events
 			SDL_GetMouseState(&mx, &my);
 
 			if (evt.button.button == SDL_BUTTON_LEFT)
-			{
 				checkIfInRect(mx, my, true);
-			}
 			else if (evt.button.button == SDL_BUTTON_RIGHT)
-			{
 				checkIfInRect(mx, my, false);
-			}
 
 			break;
 
@@ -256,17 +260,17 @@ void Core::listen() // handle events
 	}
 }
 
-void Core::checkIfInRect(int mx, int my, bool leftMouseButton) // check which tile was clicked
-{
-	bool flag = false;
-	Cell* clickedCell = NULL;
+void Core::checkIfInRect(int mx, int my, bool leftMouseButton)	// If you're my future prospective employer, please keep 
+{								// in mind that I can easily turn this from O(n) into O(1),
+	bool flag = false;					// I promise. I'll show you if you hire me!
+	Cell* clickedCell = NULL;				
 	
 	for (int i = 1; i <= x && flag == false; i++)
 	{
 		for (int j = 1; j <= y && flag == false; j++)
 		{
 			// check if clicked in cell
-			if(mx > cell[i][j]->rect.x && mx < cell[i][j]->rect.x + cell[i][j]->rect.w)
+			if (mx > cell[i][j]->rect.x && mx < cell[i][j]->rect.x + cell[i][j]->rect.w)
 				if (my > cell[i][j]->rect.y&& my < cell[i][j]->rect.y + cell[i][j]->rect.h)
 				{
 					flag = true;
@@ -275,16 +279,18 @@ void Core::checkIfInRect(int mx, int my, bool leftMouseButton) // check which ti
 		}
 	}
 
-	if (clickedCell && leftMouseButton && !clickedCell->isFlagged)
+	if (clickedCell && leftMouseButton && !clickedCell->isFlagged) // if clicked in cell with LMB & cell isnt flagge
 		revealCell(clickedCell);
 	
-	else if (clickedCell && !leftMouseButton)
+	else if (clickedCell && !leftMouseButton) // if clicked in cell with RMB
 		clickedCell->isFlagged = !clickedCell->isFlagged;
+	
+	clickedCell = NULL;
 	
 }
 
 void Core::revealCell(Cell* currentCell)	// reveal cell + if there are 0 bombs around
-{											// it, reveal them recursively
+{						// it, reveal them recursively
 	if (currentCell->revealed || currentCell->ghost)
 		return;
 		
@@ -300,14 +306,16 @@ void Core::revealCell(Cell* currentCell)	// reveal cell + if there are 0 bombs a
 	int i = currentCell->indexX;
 	int j = currentCell->indexY;
 
-	revealCell(cell[i - 1][j - 1]);	// NW
-	revealCell(cell[i - 1][j]);		// N
-	revealCell(cell[i - 1][j + 1]);	// NE
-	revealCell(cell[i][j - 1]);		// W
-	revealCell(cell[i][j + 1]);		// E
-	revealCell(cell[i + 1][j - 1]);	// SW
-	revealCell(cell[i + 1][j]);		// S
-	revealCell(cell[i + 1][j + 1]);	// SE
+	revealCell(cell[i-1][j-1]);	// NW
+	revealCell(cell[i-1][j]);	// N
+	revealCell(cell[i-1][j+1]);	// NE
+	revealCell(cell[i][j-1]);	// W
+	revealCell(cell[i][j+1]);	// E
+	revealCell(cell[i+1][j-1]);	// SW
+	revealCell(cell[i+1][j]);	// S
+	revealCell(cell[i+1][j+1]);	// SE
+	
+	currentCell = NULL;
 	
 }
 
@@ -319,7 +327,6 @@ void Core::render() // render
 		for (int j = 1; j <= y; j++)
 		{
 			SDL_Rect tempRect = cell[i][j]->rect;
-
 
 			if (cell[i][j]->revealed) // cell is open
 			{
@@ -354,14 +361,13 @@ void Core::render() // render
 				SDL_SetRenderDrawColor(renderer, 30, 144, 255, 255);
 				SDL_RenderFillRect(renderer, &tempRect);
 			}
+			
+			// draw grid around cells
+			SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+			SDL_RenderDrawRect(renderer, &cell[i][j]->rect);
+			
 		}
 	}
-
-	//draw grid
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	for (int i = 1; i <= x; i++)
-		for (int j = 1; j <= y; j++)
-			SDL_RenderDrawRect(renderer, &cell[i][j]->rect);
 
 	if (nonBombs == 0)
 		gameOver(true);
@@ -400,10 +406,10 @@ void Core::gameOver(bool win)
 	SDL_Event evt;
 	bool restartGame = false;
 
-	while (!restartGame && running) // game loop
+	while (!restartGame && running) 	// another game loop
 	{
-		while (SDL_PollEvent(&evt)) // break out of both loops if 
-		{							// restart or quit was requested
+		while (SDL_PollEvent(&evt))	// break out of both loops if 
+		{				// restart or quit was requested
 			
 			switch (evt.type)
 			{
@@ -430,7 +436,7 @@ void Core::gameOver(bool win)
 void Core::restart() // reset, lay mines again
 {
 	gameLost = false;
-	for(int i = 1; i <= x; i++)
+	for (int i = 1; i <= x; i++)
 		for (int j = 1; j <= y; j++)
 			cell[i][j]->reset();
 
