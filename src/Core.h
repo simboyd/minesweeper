@@ -30,7 +30,7 @@ struct Core
 	bool gameLost = false;
 
 
-	std::vector<std::vector<Cell*>> cell;
+	std::vector<std::vector<Cell*>> cell; // vector containing all cells
 
 	TTF_Font* font;
 	SDL_Renderer* renderer = NULL;
