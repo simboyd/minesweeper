@@ -188,7 +188,7 @@ void Core::layMines() // literally lays mines, and counts mines around a cell
 			if (cell[i - 1][j]->bomb)		// north
 				cell[i][j]->amountOfBombs++;
 
-			if (cell[i - 1][j+1]->bomb)		// northeast
+			if (cell[i-1][j+1]->bomb)		// northeast
 				cell[i][j]->amountOfBombs++;
 
 			if (cell[i][j-1]->bomb)			// west
@@ -279,7 +279,7 @@ void Core::checkIfInRect(int mx, int my, bool leftMouseButton)	// If you're my f
 		}
 	}
 
-	if (clickedCell && leftMouseButton && !clickedCell->isFlagged) // if clicked in cell with LMB & cell isnt flagge
+	if (clickedCell && leftMouseButton && !clickedCell->isFlagged) // if clicked in cell with LMB & cell isnt flaggee
 		revealCell(clickedCell);
 	
 	else if (clickedCell && !leftMouseButton) // if clicked in cell with RMB
