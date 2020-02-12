@@ -25,5 +25,3 @@ int main(int argc, char* argv[])
 
 	return 0;
 }
-
-// thank you to that cute coworker girl who helped me to re-discover this game in my life during those boring night-shifts
